@@ -26,6 +26,32 @@ node rpow-cli.js complete-login --link "https://..." --state .rpow-a.json
 node rpow-cli.js mine --count 1000 --engine gpu --state .rpow-a.json
 ```
 
+## Use an existing cookie from `../cookies.txt`
+
+If `../cookies.txt` already has raw RPOW2 cookie lines, skip login and create a CLI state file from one cookie line:
+
+```powershell
+node import-cookie-state.js --index 1 --out .rpow-cookie-1.json
+node rpow-cli.js me --state .rpow-cookie-1.json
+node rpow-cli.js mine --count 1 --engine node --state .rpow-cookie-1.json
+```
+
+`--index` is 1-based, so `--index 2` uses the second cookie line. The generated state file stores cookies in the `state.cookies` object that `rpow-cli.js` already sends on `/me`, `/challenge`, and `/mint` requests.
+
+For faster mining, build or copy one of the native binaries first, then switch the engine:
+
+```powershell
+.\build-native.ps1
+node rpow-cli.js mine --count 1 --engine native --state .rpow-cookie-1.json
+```
+
+or:
+
+```powershell
+.\build-gpu.ps1
+node rpow-cli.js mine --count 1 --engine gpu --state .rpow-cookie-1.json
+```
+
 ## Windows GPU setup
 
 1. Install Node.js 18+ and confirm it works:
