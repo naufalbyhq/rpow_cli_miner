@@ -58,6 +58,19 @@ function run(command, args, options = {}) {
   });
 }
 
+async function runWithLimit(items, limit, worker) {
+  let nextIndex = 0;
+  const workers = Array.from({ length: Math.min(limit, items.length) }, async () => {
+    while (nextIndex < items.length) {
+      const item = items[nextIndex];
+      nextIndex += 1;
+      await worker(item);
+    }
+  });
+
+  await Promise.all(workers);
+}
+
 function numberArg(value, fallback, name) {
   const number = Number(value ?? fallback);
   if (!Number.isInteger(number) || number < 1) throw new Error(`${name} must be a positive integer.`);
@@ -72,9 +85,14 @@ async function main() {
   const start = numberArg(args.start, 1, "--start");
   const limit = args.limit ? numberArg(args.limit, undefined, "--limit") : null;
   const count = numberArg(args.count, 1, "--count");
+  const parallel = numberArg(args.parallel, 1, "--parallel");
   const engine = args.engine || "gpu";
   const workers = args.workers;
   const logEveryMs = args["log-every-ms"] || "5000";
+
+  if (!["gpu", "native", "node"].includes(engine)) {
+    throw new Error("--engine must be gpu, native, or node.");
+  }
 
   const cookies = readLines(cookiesFile);
   const proxies = readLines(proxiesFile).map(parseWebshareProxy).filter(Boolean);
@@ -86,7 +104,15 @@ async function main() {
 
   fs.mkdirSync(stateDir, { recursive: true });
 
+  const work = [];
+
   for (let index = start; index <= end; index += 1) {
+    work.push(index);
+  }
+
+  console.log(`Mining ${work.length} cookie(s) with parallel=${parallel}, count=${count}, engine=${engine}.`);
+
+  await runWithLimit(work, parallel, async (index) => {
     const stateFile = path.join(stateDir, `.rpow-cookie-${index}.json`);
     const proxy = proxies[index - 1];
     console.log(`\n=== Cookie ${index}/${end} | proxy ${index} | count ${count} | engine ${engine} ===`);
@@ -108,7 +134,7 @@ async function main() {
       "--log-every-ms", String(logEveryMs),
       ...(workers ? ["--workers", String(workers)] : []),
     ]);
-  }
+  });
 }
 
 main().catch((error) => {
