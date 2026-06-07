@@ -53,6 +53,33 @@ function parseArgs(argv) {
   return out;
 }
 
+function parseProxyLine(line) {
+  const trimmed = String(line || "").trim();
+  if (!trimmed) return "";
+  if (/^https?:\/\//i.test(trimmed)) return trimmed;
+  const [host, port, username, password, ...extraParts] = trimmed.split(":");
+  if (!host || !port || !username || !password || extraParts.length > 0) return "";
+  return `http://${encodeURIComponent(username)}:${encodeURIComponent(password)}@${host}:${port}`;
+}
+
+function loadProxyPool(file) {
+  if (!file) return [];
+  return fs.readFileSync(file, "utf8")
+    .split(/\r?\n/)
+    .map(parseProxyLine)
+    .filter(Boolean);
+}
+
+function maskProxy(proxy) {
+  if (!proxy) return null;
+  try {
+    const url = new URL(proxy);
+    return `${url.protocol}//${url.hostname}:${url.port || ""}`;
+  } catch {
+    return "configured";
+  }
+}
+
 function log(level, message, data) {
   const suffix = data === undefined ? "" : ` ${formatLogData(data)}`;
   const upper = level.toUpperCase();
@@ -272,7 +299,19 @@ class RpowClient {
     this.state = loadState(this.stateFile);
     this.timeoutMs = Number(options.timeoutMs || 20000);
     this.maxRetries = Number(options.retries || 5);
-    this.dispatcher = options.proxy ? new ProxyAgent(options.proxy) : undefined;
+    this.proxies = options.proxies || [];
+    this.proxyIndex = Math.max(0, Number(options.proxyIndex || 0));
+    this.proxy = options.proxy || this.proxies[this.proxyIndex % Math.max(1, this.proxies.length)];
+    this.dispatcher = this.proxy ? new ProxyAgent(this.proxy) : undefined;
+  }
+
+  rotateProxy(reason) {
+    if (this.proxies.length < 2) return false;
+    this.proxyIndex = (this.proxyIndex + 1) % this.proxies.length;
+    this.proxy = this.proxies[this.proxyIndex];
+    this.dispatcher = new ProxyAgent(this.proxy);
+    log("warn", "rotated proxy", { reason, proxy_index: this.proxyIndex + 1, proxy: maskProxy(this.proxy) });
+    return true;
   }
 
   save() {
@@ -367,6 +406,7 @@ class RpowClient {
         }
         const retryable = err.retryable || isTransientNetworkError(err);
         if (!retryable || attempt > this.maxRetries) throw err;
+        if (err?.status === 429) this.rotateProxy("429");
         const challengeCooldown = isChallengeRequest(method, url) && err?.status === 429 && err?.code === "COOLDOWN";
         const backoff = challengeCooldown
           ? 5000
@@ -864,6 +904,8 @@ async function main() {
     timeoutMs: args.timeout || 20000,
     retries: args.retries || 5,
     proxy: args.proxy || process.env.RPOW_PROXY || process.env.HTTPS_PROXY || process.env.HTTP_PROXY,
+    proxies: loadProxyPool(args["proxy-file"]),
+    proxyIndex: args["proxy-index"] ? Number(args["proxy-index"]) - 1 : 0,
   });
 
   if (command === "map") {

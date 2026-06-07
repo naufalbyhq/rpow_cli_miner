@@ -68,10 +68,18 @@ Options:
 - `--engine gpu|native|node` chooses the miner backend.
 - `--parallel 2` runs 2 cookie accounts at the same time. Increase carefully if the GPU stays stable.
 
+Each cookie starts with its matching proxy line. If a request gets `429 Too Many Requests`, the CLI rotates that mining process to the next proxy from the proxy file before retrying.
+
 For a single cookie with a single proxy, pass `--proxy` directly:
 
 ```powershell
 node rpow-cli.js mine --count 1 --engine gpu --state .rpow-cookie-1.json --proxy http://user:pass@host:port
+```
+
+To enable retry-time rotation for a single cookie, also pass the proxy file and initial 1-based proxy index:
+
+```powershell
+node rpow-cli.js mine --count 1 --engine gpu --state .rpow-cookie-1.json --proxy http://user:pass@host:port --proxy-file ../proxies.txt.webshare --proxy-index 1
 ```
 
 ## Windows GPU setup

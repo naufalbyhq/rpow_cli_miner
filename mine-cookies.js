@@ -139,6 +139,8 @@ async function main() {
       "--engine", engine,
       "--state", stateFile,
       "--proxy", proxy,
+      "--proxy-file", proxiesFile,
+      "--proxy-index", String(index),
       "--log-every-ms", String(logEveryMs),
       ...(workers ? ["--workers", String(workers)] : []),
     ]);
