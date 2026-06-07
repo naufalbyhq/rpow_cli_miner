@@ -97,6 +97,10 @@ async function main() {
   const engine = args.engine || "gpu";
   const workers = args.workers;
   const logEveryMs = args["log-every-ms"] || "5000";
+  const gpuBatch = args["gpu-batch"];
+  const gpuLocalSize = args["gpu-local-size"];
+  const gpuPlatform = args["gpu-platform"];
+  const gpuDevice = args["gpu-device"];
 
   if (!["gpu", "native", "node"].includes(engine)) {
     throw new Error("--engine must be gpu, native, or node.");
@@ -143,6 +147,10 @@ async function main() {
       "--proxy-index", String(index),
       "--log-every-ms", String(logEveryMs),
       ...(workers ? ["--workers", String(workers)] : []),
+      ...(gpuBatch ? ["--gpu-batch", String(gpuBatch)] : []),
+      ...(gpuLocalSize ? ["--gpu-local-size", String(gpuLocalSize)] : []),
+      ...(gpuPlatform ? ["--gpu-platform", String(gpuPlatform)] : []),
+      ...(gpuDevice ? ["--gpu-device", String(gpuDevice)] : []),
     ]);
   });
 
