@@ -14,6 +14,8 @@ fi
 
 "$cc_bin" -O2 rpow-gpu-miner.c -o rpow-gpu-miner
 chmod +x rpow-gpu-miner
+ln -sf rpow-gpu-miner rpow-gpu-miner.exe
 
 echo "Built ./rpow-gpu-miner"
+echo "Linked ./rpow-gpu-miner.exe for rpow-cli.js compatibility"
 echo "Run: node rpow-cli.js mine --count 1 --engine gpu"

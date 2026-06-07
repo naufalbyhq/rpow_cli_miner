@@ -14,6 +14,8 @@ fi
 
 "$cc_bin" -O3 -march=native -pthread rpow-native-miner.c -o rpow-native-miner
 chmod +x rpow-native-miner
+ln -sf rpow-native-miner rpow-native-miner.exe
 
 echo "Built ./rpow-native-miner"
+echo "Linked ./rpow-native-miner.exe for rpow-cli.js compatibility"
 echo "Run: node rpow-cli.js mine --count 1 --engine native"
