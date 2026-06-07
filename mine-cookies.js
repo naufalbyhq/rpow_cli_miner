@@ -60,15 +60,23 @@ function run(command, args, options = {}) {
 
 async function runWithLimit(items, limit, worker) {
   let nextIndex = 0;
+  const results = [];
   const workers = Array.from({ length: Math.min(limit, items.length) }, async () => {
     while (nextIndex < items.length) {
       const item = items[nextIndex];
       nextIndex += 1;
-      await worker(item);
+      try {
+        await worker(item);
+        results.push({ item, ok: true });
+      } catch (error) {
+        results.push({ item, ok: false, error });
+        console.error(`\n=== Cookie ${item} failed: ${error.message} ===`);
+      }
     }
   });
 
   await Promise.all(workers);
+  return results.sort((a, b) => a.item - b.item);
 }
 
 function numberArg(value, fallback, name) {
@@ -112,7 +120,7 @@ async function main() {
 
   console.log(`Mining ${work.length} cookie(s) with parallel=${parallel}, count=${count}, engine=${engine}.`);
 
-  await runWithLimit(work, parallel, async (index) => {
+  const results = await runWithLimit(work, parallel, async (index) => {
     const stateFile = path.join(stateDir, `.rpow-cookie-${index}.json`);
     const proxy = proxies[index - 1];
     console.log(`\n=== Cookie ${index}/${end} | proxy ${index} | count ${count} | engine ${engine} ===`);
@@ -135,6 +143,13 @@ async function main() {
       ...(workers ? ["--workers", String(workers)] : []),
     ]);
   });
+
+  const okCount = results.filter((result) => result.ok).length;
+  const failCount = results.length - okCount;
+  console.log(`\nDone. Success: ${okCount}. Failed: ${failCount}.`);
+  if (failCount > 0) {
+    process.exitCode = 1;
+  }
 }
 
 main().catch((error) => {
