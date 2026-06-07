@@ -52,6 +52,27 @@ or:
 node rpow-cli.js mine --count 1 --engine gpu --state .rpow-cookie-1.json
 ```
 
+## Mine many cookies with matching proxies
+
+Use `mine-cookies.js` when `../cookies.txt` and `../proxies.txt.webshare` should be mined together. Cookie line 1 uses proxy line 1, cookie line 2 uses proxy line 2, and so on.
+
+```powershell
+node mine-cookies.js --cookies ../cookies.txt --proxies ../proxies.txt.webshare --start 1 --limit 10 --count 1 --engine gpu
+```
+
+Options:
+
+- `--start 1` starts from cookie line 1.
+- `--limit 10` mines 10 cookie accounts, then stops. Omit it to mine every cookie in the file.
+- `--count 1` means each cookie/account mints 1 token before moving to the next cookie.
+- `--engine gpu|native|node` chooses the miner backend.
+
+For a single cookie with a single proxy, pass `--proxy` directly:
+
+```powershell
+node rpow-cli.js mine --count 1 --engine gpu --state .rpow-cookie-1.json --proxy http://user:pass@host:port
+```
+
 ## Windows GPU setup
 
 1. Install Node.js 18+ and confirm it works:

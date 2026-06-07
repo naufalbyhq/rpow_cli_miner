@@ -8,6 +8,7 @@ const path = require("path");
 const readline = require("readline");
 const { spawn } = require("child_process");
 const { Worker } = require("worker_threads");
+const { ProxyAgent } = require("undici");
 
 const DEFAULT_SITE_ORIGIN = "https://rpow2.com";
 const DEFAULT_API_ORIGIN = "https://api.rpow2.com";
@@ -271,6 +272,7 @@ class RpowClient {
     this.state = loadState(this.stateFile);
     this.timeoutMs = Number(options.timeoutMs || 20000);
     this.maxRetries = Number(options.retries || 5);
+    this.dispatcher = options.proxy ? new ProxyAgent(options.proxy) : undefined;
   }
 
   save() {
@@ -321,6 +323,7 @@ class RpowClient {
           body: payload,
           redirect: options.redirect || "manual",
           signal: controller.signal,
+          dispatcher: this.dispatcher,
         });
         storeSetCookies(this.state, responseSetCookies(res.headers));
         this.save();
@@ -860,6 +863,7 @@ async function main() {
     stateFile: args.state || DEFAULT_STATE,
     timeoutMs: args.timeout || 20000,
     retries: args.retries || 5,
+    proxy: args.proxy || process.env.RPOW_PROXY || process.env.HTTPS_PROXY || process.env.HTTP_PROXY,
   });
 
   if (command === "map") {

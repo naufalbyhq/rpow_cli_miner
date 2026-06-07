@@ -4,3 +4,4 @@ rpow-*.json
 *.tmp
 *.zip
 image.png
+node_modules/

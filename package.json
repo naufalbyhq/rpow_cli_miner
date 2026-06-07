@@ -1,3 +1,6 @@
 {
-  "type": "commonjs"
+  "type": "commonjs",
+  "dependencies": {
+    "undici": "^6.22.0"
+  }
 }
